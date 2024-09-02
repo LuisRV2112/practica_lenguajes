@@ -60,7 +60,7 @@ public class TextEditor extends JPanel {
             }
         });
 
-        JButton openFileButton = new JButton("Open File");
+        JButton openFileButton = new JButton("Abrir Archivo");
         openFileButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -68,7 +68,7 @@ public class TextEditor extends JPanel {
             }
         });
 
-        JButton saveFileButton = new JButton("Save File");
+        JButton saveFileButton = new JButton("Guardar Archivo");
         saveFileButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -111,21 +111,21 @@ public class TextEditor extends JPanel {
 
     private void showContextMenu(Point point) {
         JPopupMenu contextMenu = new JPopupMenu();
-        JMenuItem copyItem = new JMenuItem("Copy");
+        JMenuItem copyItem = new JMenuItem("Copiar");
         copyItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 textArea.copy();
             }
         });
-        JMenuItem cutItem = new JMenuItem("Cut");
+        JMenuItem cutItem = new JMenuItem("Cortar");
         cutItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 textArea.cut();
             }
         });
-        JMenuItem pasteItem = new JMenuItem("Paste");
+        JMenuItem pasteItem = new JMenuItem("Pegar");
         pasteItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {

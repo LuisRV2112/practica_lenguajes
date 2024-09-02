@@ -16,22 +16,22 @@ import javax.imageio.ImageIO;
 import java.util.List;
 import org.example.Token;
 import frontend.ImageGenerator;
+import frontend.TextEditor;
 import org.example.Lexer;
 
 public class MainFrame extends JFrame {
-   private JTextArea textEditor;
+    private final TextEditor textEditor;
     private JPanel imagePanel;
     private List<Token> tokens;
 
     public MainFrame() {
         setTitle("Analizador Lexico");
-        setSize(800, 600);
+        setSize(1200, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        textEditor = new JTextArea();
-        JScrollPane textScrollPane = new JScrollPane(textEditor);
-        add(textScrollPane, BorderLayout.CENTER);
+        textEditor = new TextEditor();
+        add(textEditor, BorderLayout.CENTER);
 
         JButton generateButton = new JButton("Generar Imagen");
         generateButton.addActionListener(new ActionListener() {
