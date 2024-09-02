@@ -5,61 +5,139 @@
 package frontend;
 
 import javax.swing.*;
+import javax.swing.event.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.*;
+import java.awt.event.*;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.text.BadLocationException;
 
 public class TextEditor extends JPanel {
-    private JTextArea textArea;
-    private JScrollPane scrollPane;
-    private JLabel statusLabel;
+     private final JTextArea textArea;
+    private final JLabel positionLabel;
 
     public TextEditor() {
         setLayout(new BorderLayout());
 
         textArea = new JTextArea();
-        scrollPane = new JScrollPane(textArea);
-        statusLabel = new JLabel("Line: 1, Column: 1");
+        textArea.setLineWrap(true);
+        textArea.setWrapStyleWord(true);
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        add(scrollPane, BorderLayout.CENTER);
 
-        textArea.addCaretListener(e -> {
-            int line = textArea.getLineOfOffset(e.getDot()) + 1;
-            int column = e.getDot() - textArea.getLineStartOffset(textArea.getLineOfOffset(e.getDot())) + 1;
-            statusLabel.setText("Line: " + line + ", Column: " + column);
+        positionLabel = new JLabel("Line: 1, Column: 1");
+        add(positionLabel, BorderLayout.SOUTH);
+
+        textArea.addCaretListener(new CaretListener() {
+            @Override
+            public void caretUpdate(CaretEvent e) {
+                int line = 0;
+                try {
+                    line = textArea.getLineOfOffset(e.getDot()) + 1;
+                } catch (BadLocationException ex) {
+                    Logger.getLogger(TextEditor.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                int column = 0;
+                try {
+                    column = e.getDot() - textArea.getLineStartOffset(line - 1) + 1;
+                } catch (BadLocationException ex) {
+                    Logger.getLogger(TextEditor.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                positionLabel.setText("Line: " + line + ", Column: " + column);
+            }
         });
 
-        add(scrollPane, BorderLayout.CENTER);
-        add(statusLabel, BorderLayout.SOUTH);
-
-        createMenuBar();
-    }
-
-    private void createMenuBar() {
-        JMenuBar menuBar = new JMenuBar();
-        JMenu fileMenu = new JMenu("File");
-        JMenuItem openItem = new JMenuItem("Open");
-
-        openItem.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                JFileChooser fileChooser = new JFileChooser();
-                int returnValue = fileChooser.showOpenDialog(null);
-                if (returnValue == JFileChooser.APPROVE_OPTION) {
-                    File file = fileChooser.getSelectedFile();
-                    try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-                        textArea.read(reader, null);
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
-                    }
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    showContextMenu(e.getPoint());
                 }
             }
         });
 
-        fileMenu.add(openItem);
-        menuBar.add(fileMenu);
-        JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
-        if (topFrame != null) {
-            topFrame.setJMenuBar(menuBar);
+        JButton openFileButton = new JButton("Open File");
+        openFileButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                openFile();
+            }
+        });
+
+        JButton saveFileButton = new JButton("Save File");
+        saveFileButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                saveFile();
+            }
+        });
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(openFileButton);
+        buttonPanel.add(saveFileButton);
+        add(buttonPanel, BorderLayout.NORTH);
+    }
+
+    private void openFile() {
+        JFileChooser fileChooser = new JFileChooser();
+        int option = fileChooser.showOpenDialog(this);
+        if (option == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            try {
+                String content = new String(Files.readAllBytes(Paths.get(file.getAbsolutePath())));
+                textArea.setText(content);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
         }
+    }
+
+    private void saveFile() {
+        JFileChooser fileChooser = new JFileChooser();
+        int option = fileChooser.showSaveDialog(this);
+        if (option == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            try {
+                Files.write(Paths.get(file.getAbsolutePath()), textArea.getText().getBytes());
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+
+    private void showContextMenu(Point point) {
+        JPopupMenu contextMenu = new JPopupMenu();
+        JMenuItem copyItem = new JMenuItem("Copy");
+        copyItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                textArea.copy();
+            }
+        });
+        JMenuItem cutItem = new JMenuItem("Cut");
+        cutItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                textArea.cut();
+            }
+        });
+        JMenuItem pasteItem = new JMenuItem("Paste");
+        pasteItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                textArea.paste();
+            }
+        });
+
+        contextMenu.add(copyItem);
+        contextMenu.add(cutItem);
+        contextMenu.add(pasteItem);
+
+        contextMenu.show(textArea, point.x, point.y);
     }
 
     public String getText() {

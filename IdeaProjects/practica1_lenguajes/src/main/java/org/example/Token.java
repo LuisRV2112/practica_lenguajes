@@ -3,11 +3,15 @@ package org.example;
 public class Token {
     private final TokenType type;
     private final String value;
+    private final int line;
+    private final int column;
     private final String color;
 
-    public Token(TokenType type, String value, String color) {
+    public Token(TokenType type, String value, int line, int column, String color) {
         this.type = type;
         this.value = value;
+        this.line = line;
+        this.column = column;
         this.color = color;
     }
 
@@ -19,12 +23,15 @@ public class Token {
         return value;
     }
 
-    public String getColor() {
-        return color;
+    public int getLine() {
+        return line;
     }
 
-    @Override
-    public String toString() {
-        return String.format("[%s, %s, %s]", type, value, color);
+    public int getColumn() {
+        return column;
+    }
+
+    public String getColor() {
+        return color;
     }
 }

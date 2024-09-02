@@ -10,8 +10,8 @@ import java.util.List;
 import javax.imageio.ImageIO;
 
 public class ImageGenerator {
-    private static final int CELL_SIZE = 50;  // Tamaño de cada celda en la cuadrícula
-    private static final int PADDING = 10;    // Espacio entre las celdas (opcional)
+    public static final int CELL_SIZE = 50;  // Tamaño de cada celda en la cuadrícula
+    private static final int PADDING = 5;    // Espacio entre las celdas
 
     public static void generateImage(List<Token> tokens, int columns, String outputPath) {
         int rows = (int) Math.ceil((double) tokens.size() / columns);
@@ -21,6 +21,10 @@ public class ImageGenerator {
 
         BufferedImage image = new BufferedImage(imageWidth, imageHeight, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = image.createGraphics();
+
+        // Clear the image with a white background
+        g2d.setColor(Color.WHITE);
+        g2d.fillRect(0, 0, imageWidth, imageHeight);
 
         for (int i = 0; i < tokens.size(); i++) {
             int x = (i % columns) * (CELL_SIZE + PADDING);
