@@ -1,6 +1,6 @@
 package org.example;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class Lexer {
@@ -8,118 +8,202 @@ public class Lexer {
     private int currentIndex;
     private int length;
 
-    public boolean Lexer (String input) {
-        this.input = input;
-        private String input;
-        private int currentIndex;
-        private int length;
+    // Definición de operadores con sus símbolos, tipos y colores
+    private static class Operator {
+        String symbol;
+        String type;
+        String color;
+        private final String input;
+        private int position;
 
-        // Definición de operadores con sus símbolos, tipos y colores
-        private static class Operator {
-            String symbol;
-            String type;
-            String color;
-
-            Operator(String symbol, String type, String color) {
-                this.symbol = symbol;
-                this.type = type;
-                this.color = color;
-            }
-        }
-
-        private static final List<Operator> OPERATORS = Arrays.asList(
-                new Operator("==", "IGUAL", "#6A00FF"),                         // Igual
-                new Operator("<>", "DIFERENTE", "#3F2212"),                    // Diferente
-                new Operator(">=", "MAYOR_O_IGUAL", "#E3C800"),                 // Mayor o igual que
-                new Operator("<=", "MENOR_O_IGUAL", "#F0A30A"),                 // Menor o igual que
-                new Operator("Mod", "MODULO", "#d9ab41"),                       // Módulo
-                new Operator("+", "SUMA", "#FF33FF"),                           // Suma
-                new Operator("-", "RESTA", "#C19A6B"),                          // Resta
-                new Operator("^", "EXPONENTE", "#FCD0B4"),                      // Exponente
-                new Operator("/", "DIVISION", "#B4D941"),                       // División
-                new Operator("*", "MULTIPLICACION", "#d80073"),                // Multiplicación
-                new Operator(">", "MAYOR_QUE", "#D9D441"),                      // Mayor que
-                new Operator("<", "MENOR_QUE", "#D94A41")                       // Menor que
-        );
-
-    public Lexer(String input) {
+        public Lexer(String input) {
             this.input = input;
-            this.currentIndex = 0;
-            this.length = input.length();
+            this.position = 0;
         }
 
-        // Método para saltar espacios en blanco
-        private void skipWhitespace(){
-            while (currentIndex < length && Character.isWhitespace(input.charAt(currentIndex))) {
-                currentIndex++;
-            }
-        }
-
-        // Métodos auxiliares para identificar tipos de caracteres
-        private boolean isLetter(char c) {
-            return Character.isLetter(c);
-        }
-
-        private boolean isDigit(char c) {
-            return Character.isDigit(c);
-        }
-
-        private boolean isIdentifierStart(char c) {
-            return isLetter(c);
-        }
-
-        private boolean isIdentifierPart(char c) {
-            return isLetter(c) || isDigit(c) || c == '_';
-        }
-
-        // Método para obtener el siguiente token
-        public Token nextToken() {
-            skipWhitespace();
-
-            if (currentIndex >= length) {
-                return null; // Fin de la entrada
-            }
-
-            char currentChar = input.charAt(currentIndex);
-
-            // Reconocer Identificadores
-            if (isIdentifierStart(currentChar)) {
-                StringBuilder identifier = new StringBuilder();
-                identifier.append(currentChar);
-                currentIndex++;
-
-                while (currentIndex < length && isIdentifierPart(input.charAt(currentIndex))) {
-                    identifier.append(input.charAt(currentIndex));
-                    currentIndex++;
-                }
-
-                return new Token("IDENTIFIER", identifier.toString(), "#FFD300"); // Color amarillo para identificadores
-            }
-
-            // Reconocer Operadores
-            // Intentar coincidir con el operador más largo primero
-            for (Operator op : OPERATORS) {
-                int opLength = op.symbol.length();
-                if (currentIndex + opLength <= length) {
-                    String substr = input.substring(currentIndex, currentIndex + opLength);
-                    if (substr.equals(op.symbol)) {
-                        currentIndex += opLength;
-                        return new Token(op.type, op.symbol, op.color);
-                    }
-                }
-            }
-
-            throw new RuntimeException("Unexpected character: " + currentChar);
-        }
-
-        // Método para obtener todos los tokens
         public List<Token> tokenize() {
             List<Token> tokens = new ArrayList<>();
-            Token token;
-            while ((token = nextToken()) != null) {
-                tokens.add(token);
+
+            while (position < input.length()) {
+                char currentChar = peek();
+
+                if (Character.isLetter(currentChar)) {
+                    tokens.add(scanIdentifierOrKeyword());
+                } else if (Character.isDigit(currentChar)) {
+                    tokens.add(scanNumber());
+                } else if (currentChar == '"') {
+                    tokens.add(scanString());
+                } else if (currentChar == '\'') {
+                    tokens.add(scanChar());
+                } else {
+                    tokens.add(scanOperatorOrAssignment());
+                }
             }
+
             return tokens;
+        }
+
+        private char peek() {
+            return input.charAt(position);
+        }
+
+        private char peek(int offset) {
+            return position + offset < input.length() ? input.charAt(position + offset) : '\0';
+        }
+
+        private Token scanIdentifierOrKeyword() {
+            StringBuilder identifier = new StringBuilder();
+
+            while (position < input.length() && (Character.isLetterOrDigit(peek()) || peek() == '_')) {
+                identifier.append(peek());
+                position++;
+            }
+
+            String value = identifier.toString();
+
+            if (isKeyword(value)) {
+                return new Token(TokenType.KEYWORD, value, "#60A917");
+            }
+
+            return new Token(TokenType.IDENTIFIER, value, "#FFD300");
+        }
+
+        private boolean isKeyword(String value) {
+            return switch (value) {
+                case "Module", "End", "Sub", "Main", "Dim", "As", "Integer", "String", "Boolean", "Double", "Char",
+                     "Console.WriteLine", "Console.ReadLine", "If", "ElseIf", "Else", "Then", "While", "Do", "Loop",
+                     "For", "To", "Next", "Function", "Return", "Const" -> true;
+                default -> false;
+            };
+        }
+
+        private Token scanNumber() {
+            StringBuilder number = new StringBuilder();
+            boolean isDecimal = false;
+
+            while (position < input.length() && (Character.isDigit(peek()) || peek() == '.')) {
+                if (peek() == '.') {
+                    isDecimal = true;
+                }
+                number.append(peek());
+                position++;
+            }
+
+            return new Token(isDecimal ? TokenType.DECIMAL : TokenType.INTEGER, number.toString(),
+                    isDecimal ? "#FFFF88" : "#1BA1E2");
+        }
+
+        private Token scanString() {
+            StringBuilder str = new StringBuilder();
+            position++;  // skip the opening quote
+
+            while (position < input.length() && peek() != '"') {
+                str.append(peek());
+                position++;
+            }
+            position++;  // skip the closing quote
+
+            return new Token(TokenType.STRING, str.toString(), "#E51400");
+        }
+
+        private Token scanChar() {
+            StringBuilder ch = new StringBuilder();
+            position++;  // skip the opening quote
+
+            while (position < input.length() && peek() != '\'') {
+                ch.append(peek());
+                position++;
+            }
+            position++;  // skip the closing quote
+
+            return new Token(TokenType.CHAR, ch.toString(), "#0050EF");
+        }
+
+        private Token scanOperatorOrAssignment() {
+            char currentChar = peek();
+
+            switch (currentChar) {
+                case '+' -> {
+                    if (peek(1) == '=') {
+                        position += 2;
+                        return new Token(TokenType.PLUS_ASSIGN, "+=", "#FFFFFF");
+                    }
+                    position++;
+                    return new Token(TokenType.PLUS, "+", "#FF33FF");
+                }
+                case '-' -> {
+                    if (peek(1) == '=') {
+                        position += 2;
+                        return new Token(TokenType.MINUS_ASSIGN, "-=", "#FFFFFF");
+                    }
+                    position++;
+                    return new Token(TokenType.MINUS, "-", "#C19A6B");
+                }
+                case '*' -> {
+                    if (peek(1) == '=') {
+                        position += 2;
+                        return new Token(TokenType.MULTIPLY_ASSIGN, "*=", "#FFFFFF");
+                    }
+                    position++;
+                    return new Token(TokenType.MULTIPLICATION, "*", "#d80073");
+                }
+                case '/' -> {
+                    if (peek(1) == '=') {
+                        position += 2;
+                        return new Token(TokenType.DIVIDE_ASSIGN, "/=", "#FFFFFF");
+                    }
+                    position++;
+                    return new Token(TokenType.DIVISION, "/", "#B4D941");
+                }
+                case '=' -> {
+                    if (peek(1) == '=') {
+                        position += 2;
+                        return new Token(TokenType.EQUALS, "==", "#6A00FF");
+                    }
+                    position++;
+                    return new Token(TokenType.ASSIGN, "=", "#41D9D4");
+                }
+                case '<' -> {
+                    if (peek(1) == '>') {
+                        position += 2;
+                        return new Token(TokenType.NOT_EQUALS, "<>", "#3F2212");
+                    } else if (peek(1) == '=') {
+                        position += 2;
+                        return new Token(TokenType.LESS_EQUALS, "<=", "#F0A30A");
+                    }
+                    position++;
+                    return new Token(TokenType.LESS_THAN, "<", "#D94A41");
+                }
+                case '>' -> {
+                    if (peek(1) == '=') {
+                        position += 2;
+                        return new Token(TokenType.GREATER_EQUALS, ">=", "#E3C800");
+                    }
+                    position++;
+                    return new Token(TokenType.GREATER_THAN, ">", "#D9D441");
+                }
+                default -> {
+                    if (input.startsWith("And", position)) {
+                        position += 3;
+                        return new Token(TokenType.AND, "And", "#414ED9");
+                    } else if (input.startsWith("Or", position)) {
+                        position += 2;
+                        return new Token(TokenType.OR, "Or", "#41D95D");
+                    } else if (input.startsWith("Not", position)) {
+                        position += 3;
+                        return new Token(TokenType.NOT, "Not", "#A741D9");
+                    } else if (input.startsWith("Mod", position)) {
+                        position += 3;
+                        return new Token(TokenType.MODULO, "Mod", "#d9ab41");
+                    } else if (input.startsWith("^", position)) {
+                        position++;
+                        return new Token(TokenType.EXPONENT, "^", "#FCD0B4");
+                    } else {
+                        position++;
+                    }
+                    return null;
+                }
+            }
         }
     }
 }

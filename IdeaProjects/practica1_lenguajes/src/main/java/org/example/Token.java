@@ -1,17 +1,17 @@
 package org.example;
 
 public class Token {
-    private String type;
-    private String value;
-    private String color;
+    private final TokenType type;
+    private final String value;
+    private final String color;
 
-    public Token(String type, String value, String color) {
+    public Token(TokenType type, String value, String color) {
         this.type = type;
         this.value = value;
         this.color = color;
     }
 
-    public String getType() {
+    public TokenType getType() {
         return type;
     }
 
@@ -25,10 +25,6 @@ public class Token {
 
     @Override
     public String toString() {
-        return "Token{" +
-                "type='" + type + '\'' +
-                ", value='" + value + '\'' +
-                ", color='" + color + '\'' +
-                '}';
+        return String.format("[%s, %s, %s]", type, value, color);
     }
 }
